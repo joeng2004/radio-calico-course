@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Calico</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f0f;
+      font-family: 'Georgia', serif;
+      color: #e8e0d5;
+    }
+
+    .player {
+      text-align: center;
+      padding: 3rem 2rem;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .logo {
+      font-size: 2rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #e8e0d5;
+      margin-bottom: 0.25rem;
+    }
+
+    .tagline {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #7a6f65;
+      margin-bottom: 3rem;
+    }
+
+    .play-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid #e8e0d5;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+      margin-bottom: 2rem;
+    }
+
+    .play-btn:hover {
+      background: rgba(232, 224, 213, 0.1);
+    }
+
+    .play-btn.loading {
+      border-color: #7a6f65;
+      cursor: wait;
+    }
+
+    .play-btn svg {
+      fill: #e8e0d5;
+    }
+
+    .play-btn.loading svg {
+      fill: #7a6f65;
+    }
+
+    /* Spinner overlay when loading */
+    .play-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: #e8e0d5;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .play-btn { position: relative; }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .volume-icon {
+      fill: #7a6f65;
+      flex-shrink: 0;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 140px;
+      height: 2px;
+      background: #3a3530;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #e8e0d5;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #e8e0d5;
+      border: none;
+      cursor: pointer;
+    }
+
+    .status {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #7a6f65;
+      min-height: 1em;
+    }
+
+    .status.live {
+      color: #c8a882;
+    }
+
+    .status.error {
+      color: #c87a6a;
+    }
+  </style>
+</head>
+<body>
+  <div class="player">
+    <div class="logo">Radio Calico</div>
+    <div class="tagline">Live Stream</div>
+
+    <button class="play-btn" id="playBtn" aria-label="Play">
+      <svg id="playIcon" width="28" height="28" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+
+    <div class="volume-row">
+      <svg class="volume-icon" width="16" height="16" viewBox="0 0 24 24">
+        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+      </svg>
+      <input type="range" id="volume" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+    </div>
+
+    <div class="status" id="status">Ready</div>
+  </div>
+
+  <audio id="audio"></audio>
+
+  <script>
+    const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const volumeSlider = document.getElementById('volume');
+    const statusEl = document.getElementById('status');
+
+    const ICONS = {
+      play: '<path d="M8 5v14l11-7z"/>',
+      pause: '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>',
+    };
+
+    let hls = null;
+    let playing = false;
+
+    function setStatus(text, cls = '') {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (cls ? ' ' + cls : '');
+    }
+
+    function setIcon(name) {
+      playIcon.innerHTML = ICONS[name];
+    }
+
+    function initHls() {
+      if (hls) { hls.destroy(); hls = null; }
+
+      if (Hls.isSupported()) {
+        hls = new Hls({ lowLatencyMode: true });
+        hls.loadSource(STREAM_URL);
+        hls.attachMedia(audio);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          audio.play();
+        });
+
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            setStatus('Stream error', 'error');
+            setIcon('play');
+            playBtn.classList.remove('loading');
+            playing = false;
+          }
+        });
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS (Safari)
+        audio.src = STREAM_URL;
+        audio.play();
+      } else {
+        setStatus('HLS not supported in this browser', 'error');
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (playing) {
+        audio.pause();
+        if (hls) { hls.destroy(); hls = null; }
+        audio.src = '';
+        playing = false;
+        setIcon('play');
+        setStatus('Ready');
+      } else {
+        playBtn.classList.add('loading');
+        setStatus('Connecting\u2026');
+        initHls();
+      }
+    });
+
+    audio.addEventListener('playing', () => {
+      playing = true;
+      playBtn.classList.remove('loading');
+      setIcon('pause');
+      setStatus('Live', 'live');
+    });
+
+    audio.addEventListener('waiting', () => {
+      setStatus('Buffering\u2026');
+    });
+
+    audio.addEventListener('stalled', () => {
+      setStatus('Buffering\u2026');
+    });
+
+    audio.addEventListener('ended', () => {
+      playing = false;
+      setIcon('play');
+      setStatus('Ready');
+    });
+
+    volumeSlider.addEventListener('input', () => {
+      audio.volume = volumeSlider.value;
+    });
+  </script>
+</body>
+</html>

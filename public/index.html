@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Calico</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #D8F2D5;
+      font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #231F20;
+    }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      background: #231F20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+    }
+    .header-logo {
+      height: 52px;
+      width: auto;
+    }
+
+    /* ── Page body ── */
+    .page {
+      flex: 1;
+      width: 100%;
+      max-width: 960px;
+      padding: 2.5rem 2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Main content row ── */
+    .main-row {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+
+    /* ── Album art card ── */
+    .art-card {
+      flex-shrink: 0;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    .art-img-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #2a2520;
+    }
+    .art-img-wrap img#npArt {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .art-img-wrap img#npArt.hidden {
+      visibility: hidden;
+    }
+    /* Red band */
+    .art-band {
+      background: #c0392b;
+      padding: 0.6rem 0.75rem;
+      min-height: 2.5rem;
+      display: flex;
+      align-items: center;
+    }
+    .art-band-text {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Track info block ── */
+    .track-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      justify-content: center;
+      min-width: 0;
+      padding-top: 0.25rem;
+    }
+    .np-artist {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: 1.9rem;
+      line-height: 1.2;
+      color: #1F4E23;
+      margin-bottom: 0.4rem;
+    }
+    .np-title {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 500;
+      font-size: 1.2rem;
+      color: #231F20;
+      margin-bottom: 0.35rem;
+    }
+    .np-album {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #231F20;
+      margin-bottom: 0.5rem;
+    }
+    .np-meta {
+      font-size: 0.78rem;
+      color: #7a8a7a;
+      line-height: 1.5;
+      margin-bottom: 1.1rem;
+    }
+
+    /* Rating */
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.25rem;
+    }
+    .rating-label {
+      font-size: 0.8rem;
+      color: #231F20;
+      font-weight: 600;
+    }
+    .rating-btn {
+      background: none;
+      border: 2px solid #1F4E23;
+      border-radius: 20px;
+      color: #1F4E23;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.65rem;
+      font-size: 0.8rem;
+      font-family: inherit;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .rating-btn:hover { background: #b8e8b4; }
+    .rating-btn.active-up { border-color: #EFA63C; color: #EFA63C; }
+    .rating-btn.active-down { border-color: #c87a6a; color: #c87a6a; }
+
+    /* ── Player bar ── */
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #231F20;
+      border-radius: 60px;
+      padding: 0.6rem 1.25rem 0.6rem 0.6rem;
+      max-width: 420px;
+    }
+    .play-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #D8F2D5;
+      background: transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .play-btn:hover { background: #38A29D; }
+    .play-btn.loading { border-color: #38A29D; cursor: wait; }
+    .play-btn.loading svg { fill: #38A29D; }
+    .play-btn.loading::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: #D8F2D5;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .play-btn svg { fill: #D8F2D5; }
+
+    .player-mid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      flex-shrink: 0;
+    }
+    .elapsed {
+      font-size: 0.7rem;
+      color: #D8F2D5;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.05em;
+    }
+    .elapsed.live { color: #EFA63C; }
+    .status {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #7a9a7a;
+    }
+    .status.live { color: #EFA63C; }
+    .status.error { color: #c87a6a; }
+
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+    }
+    .vol-icon { fill: #D8F2D5; flex-shrink: 0; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      flex: 1;
+      height: 3px;
+      background: #38A29D;
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #38A29D;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 13px; height: 13px;
+      border-radius: 50%;
+      background: #38A29D;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* ── Previous tracks panel ── */
+    .prev-panel {
+      background: #b8e8b4;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+    }
+    .prev-heading {
+      font-family: "Montserrat", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #1F4E23;
+      margin-bottom: 0.75rem;
+    }
+    .track-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .track-item {
+      font-size: 0.875rem;
+      color: #231F20;
+      line-height: 1.4;
+    }
+    .track-item .track-artist-name {
+      font-weight: 600;
+    }
+    .track-item .track-title-name {
+      font-style: italic;
+      color: #3a5a3a;
+    }
+    .placeholder { color: #5a8a5a; font-size: 0.85rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .main-row { flex-direction: column; }
+      .art-card { width: 100%; }
+      .player { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <img class="header-logo" src="RadioCalicoLogoTM.png" alt="Radio Calico">
+  </header>
+
+  <div class="page">
+    <div class="main-row">
+
+      <!-- Album art card -->
+      <div class="art-card">
+        <div class="art-img-wrap">
+          <img id="npArt" class="hidden" alt="Album art">
+        </div>
+        <div class="art-band">
+          <span class="art-band-text" id="artBandText">Radio Calico</span>
+        </div>
+      </div>
+
+      <!-- Track info + player -->
+      <div class="track-info">
+        <div class="np-artist" id="npArtist"><span class="placeholder">—</span></div>
+        <div class="np-title" id="npTitle"></div>
+        <div class="np-album" id="npAlbum"></div>
+        <div class="np-meta" id="npMeta">24-bit / 48 kHz FLAC source &bull; HLS live stream</div>
+
+        <div class="rating-row">
+          <span class="rating-label">Rate this track:</span>
+          <button class="rating-btn" id="rateUp" aria-label="Thumbs up">👍 <span id="upCount">0</span></button>
+          <button class="rating-btn" id="rateDown" aria-label="Thumbs down">👎 <span id="downCount">0</span></button>
+        </div>
+
+        <div class="player">
+          <button class="play-btn" id="playBtn" aria-label="Play">
+            <svg id="playIcon" width="20" height="20" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+          <div class="player-mid">
+            <span class="elapsed" id="elapsed">0:00 / Live</span>
+            <span class="status" id="status">Ready</span>
+          </div>
+          <div class="volume-row">
+            <svg class="vol-icon" width="16" height="16" viewBox="0 0 24 24">
+              <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+            </svg>
+            <input type="range" id="volume" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.main-row -->
+
+    <!-- Previous tracks -->
+    <div class="prev-panel">
+      <div class="prev-heading">Previous tracks:</div>
+      <ul class="track-list" id="trackList">
+        <li class="placeholder">—</li>
+      </ul>
+    </div>
+
+  </div><!-- /.page -->
+
+  <audio id="audio"></audio>
+
+  <script>
+    const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
+    const METADATA_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json';
+    const COVER_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg';
+
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const volumeSlider = document.getElementById('volume');
+    const statusEl = document.getElementById('status');
+    const elapsedEl = document.getElementById('elapsed');
+    const npTitle = document.getElementById('npTitle');
+    const npArtist = document.getElementById('npArtist');
+    const npAlbum = document.getElementById('npAlbum');
+    const npArt = document.getElementById('npArt');
+    const artBandText = document.getElementById('artBandText');
+    const trackList = document.getElementById('trackList');
+    const rateUp = document.getElementById('rateUp');
+    const rateDown = document.getElementById('rateDown');
+    const upCount = document.getElementById('upCount');
+    const downCount = document.getElementById('downCount');
+
+    let hls = null;
+    let playing = false;
+    let elapsedSec = 0;
+    let timer = null;
+    let metaTimer = null;
+    let currentSongKey = null;
+
+    function fmt(s) {
+      const m = Math.floor(s / 60);
+      const sec = String(Math.floor(s % 60)).padStart(2, '0');
+      return `${m}:${sec}`;
+    }
+
+    function startTimer() {
+      elapsedSec = 0;
+      elapsedEl.textContent = '0:00 / Live';
+      elapsedEl.classList.add('live');
+      timer = setInterval(() => { elapsedSec++; elapsedEl.textContent = fmt(elapsedSec) + ' / Live'; }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timer); timer = null;
+      elapsedEl.textContent = '0:00 / Live';
+      elapsedEl.classList.remove('live');
+    }
+
+    function setStatus(text, cls = '') {
+      statusEl.textContent = text;
+      statusEl.className = 'status' + (cls ? ' ' + cls : '');
+    }
+
+    function setIcon(name) {
+      playIcon.innerHTML = name === 'pause'
+        ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'
+        : '<path d="M8 5v14l11-7z"/>';
+    }
+
+    function applyRating({ up, down, userRating }) {
+      upCount.textContent = up;
+      downCount.textContent = down;
+      rateUp.classList.toggle('active-up', userRating === 1);
+      rateDown.classList.toggle('active-down', userRating === -1);
+    }
+
+    async function fetchRatings(songKey) {
+      try {
+        const res = await fetch('/api/ratings?song=' + encodeURIComponent(songKey));
+        if (res.ok) applyRating(await res.json());
+      } catch (_) {}
+    }
+
+    async function submitRating(rating) {
+      if (!currentSongKey) return;
+      try {
+        const res = await fetch('/api/ratings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ song: currentSongKey, rating })
+        });
+        if (res.ok) applyRating(await res.json());
+      } catch (_) {}
+    }
+
+    rateUp.addEventListener('click', () => submitRating(1));
+    rateDown.addEventListener('click', () => submitRating(-1));
+
+    async function fetchMetadata() {
+      try {
+        const res = await fetch(METADATA_URL, { cache: 'no-store' });
+        if (!res.ok) return;
+        const d = await res.json();
+
+        npArtist.textContent = d.artist || '—';
+        const year = d.date ? d.date.slice(0, 4) : '';
+        npTitle.textContent = d.title ? (year ? `${d.title} (${year})` : d.title) : '';
+        npAlbum.textContent = d.album || '';
+
+        // Red band: artist – title
+        artBandText.textContent = [d.artist, d.title].filter(Boolean).join(' – ');
+
+        const songKey = (d.artist || '') + '|' + (d.title || '');
+        if (songKey !== currentSongKey) {
+          currentSongKey = songKey;
+          applyRating({ up: 0, down: 0, userRating: 0 });
+          fetchRatings(songKey);
+        }
+
+        npArt.src = COVER_URL + '?t=' + Date.now();
+        npArt.onload = () => npArt.classList.remove('hidden');
+        npArt.onerror = () => npArt.classList.add('hidden');
+
+        const prev = [];
+        for (let i = 1; i <= 5; i++) {
+          const a = d[`prev_artist_${i}`], t = d[`prev_title_${i}`];
+          if (a || t) prev.push({ artist: a || '', title: t || '' });
+        }
+
+        if (prev.length) {
+          trackList.innerHTML = prev.map(tr => `
+            <li class="track-item">
+              <span class="track-artist-name">${esc(tr.artist)}</span>${tr.artist && tr.title ? ': ' : ''}<span class="track-title-name">${esc(tr.title)}</span>
+            </li>`).join('');
+        }
+      } catch (_) {}
+    }
+
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function startMetaPolling() {
+      fetchMetadata();
+      metaTimer = setInterval(fetchMetadata, 15000);
+    }
+
+    function stopMetaPolling() {
+      clearInterval(metaTimer); metaTimer = null;
+    }
+
+    function initHls() {
+      if (hls) { hls.destroy(); hls = null; }
+      if (Hls.isSupported()) {
+        hls = new Hls({ lowLatencyMode: true });
+        hls.loadSource(STREAM_URL);
+        hls.attachMedia(audio);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
+        hls.on(Hls.Events.ERROR, (_, data) => {
+          if (data.fatal) {
+            setStatus('Stream error', 'error');
+            setIcon('play');
+            playBtn.classList.remove('loading');
+            stopTimer();
+            stopMetaPolling();
+            playing = false;
+          }
+        });
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        audio.src = STREAM_URL;
+        audio.play();
+      } else {
+        setStatus('HLS not supported', 'error');
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (playing) {
+        audio.pause();
+        if (hls) { hls.destroy(); hls = null; }
+        audio.src = '';
+        playing = false;
+        setIcon('play');
+        setStatus('Ready');
+        stopTimer();
+        stopMetaPolling();
+      } else {
+        playBtn.classList.add('loading');
+        setStatus('Connecting\u2026');
+        initHls();
+      }
+    });
+
+    audio.addEventListener('playing', () => {
+      playing = true;
+      playBtn.classList.remove('loading');
+      setIcon('pause');
+      setStatus('Live', 'live');
+      if (!timer) startTimer();
+      if (!metaTimer) startMetaPolling();
+    });
+
+    audio.addEventListener('waiting', () => setStatus('Buffering\u2026'));
+    audio.addEventListener('stalled', () => setStatus('Buffering\u2026'));
+    audio.addEventListener('ended', () => {
+      playing = false;
+      setIcon('play');
+      setStatus('Ready');
+      stopTimer();
+      stopMetaPolling();
+    });
+
+    volumeSlider.addEventListener('input', () => { audio.volume = volumeSlider.value; });
+
+    fetchMetadata();
+  </script>
+</body>
+</html>
