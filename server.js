@@ -56,6 +56,12 @@ app.post('/api/ratings', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+const HOST = '0.0.0.0';
+
+if (require.main === module) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Listening on ${HOST}:${PORT}`);
+  });
+}
+
+module.exports = { app, db };
