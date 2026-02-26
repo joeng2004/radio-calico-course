@@ -74,7 +74,9 @@
 
   <audio id="audio"></audio>
 
-  <script>
+  <script type="module">
+    import { applyRating, fetchRatings, submitRating } from './ratings.js';
+
     const STREAM_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/hls/live.m3u8';
     const METADATA_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/metadatav2.json';
     const COVER_URL = 'https://d3d4yli4hf5bmh.cloudfront.net/cover.jpg';
@@ -133,34 +135,10 @@
         : '<path d="M8 5v14l11-7z"/>';
     }
 
-    function applyRating({ up, down, userRating }) {
-      upCount.textContent = up;
-      downCount.textContent = down;
-      rateUp.classList.toggle('active-up', userRating === 1);
-      rateDown.classList.toggle('active-down', userRating === -1);
-    }
+    const ratingEls = { rateUp, rateDown, upCount, downCount };
 
-    async function fetchRatings(songKey) {
-      try {
-        const res = await fetch('/api/ratings?song=' + encodeURIComponent(songKey));
-        if (res.ok) applyRating(await res.json());
-      } catch (_) {}
-    }
-
-    async function submitRating(rating) {
-      if (!currentSongKey) return;
-      try {
-        const res = await fetch('/api/ratings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ song: currentSongKey, rating })
-        });
-        if (res.ok) applyRating(await res.json());
-      } catch (_) {}
-    }
-
-    rateUp.addEventListener('click', () => submitRating(1));
-    rateDown.addEventListener('click', () => submitRating(-1));
+    rateUp.addEventListener('click', () => submitRating(currentSongKey, 1, ratingEls));
+    rateDown.addEventListener('click', () => submitRating(currentSongKey, -1, ratingEls));
 
     async function fetchMetadata() {
       try {
@@ -179,8 +157,8 @@
         const songKey = (d.artist || '') + '|' + (d.title || '');
         if (songKey !== currentSongKey) {
           currentSongKey = songKey;
-          applyRating({ up: 0, down: 0, userRating: 0 });
-          fetchRatings(songKey);
+          applyRating(ratingEls, { up: 0, down: 0, userRating: 0 });
+          fetchRatings(songKey, ratingEls);
         }
 
         npArt.src = COVER_URL + '?t=' + Date.now();
