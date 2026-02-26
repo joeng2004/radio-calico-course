@@ -1,0 +1,13 @@
+node_modules
+.git
+.github
+.env
+dev.db
+*.png
+*.txt
+RadioCalicoLayout.png
+RadioCalico_Style_Guide.txt
+README.md
+CLAUDE.md
+app.py
+index.html

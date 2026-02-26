@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const crypto = require('crypto');
 
 const app = express();
-const db = new Database('dev.db');
+const db = new Database(process.env.DB_PATH || 'dev.db');
 
 app.set('trust proxy', true);
 app.use(express.json());
