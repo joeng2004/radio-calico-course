@@ -30,6 +30,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+app.get('/api/config', (req, res) => {
+  res.json({ env: process.env.APP_ENV || 'prod' });
+});
+
 app.get('/api/ratings', (req, res) => {
   const song = req.query.song;
   if (!song) return res.status(400).json({ error: 'missing song' });

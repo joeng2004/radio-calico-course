@@ -15,6 +15,7 @@ services:
       - db-data:/data
     environment:
       - DB_PATH=/data/dev.db
+      - APP_ENV=dev
 
   app-prod:
     build:
