@@ -257,6 +257,10 @@
     volumeSlider.addEventListener('input', () => { audio.volume = volumeSlider.value; });
 
     fetchMetadata();
+
+    fetch('/api/config').then(r => r.json()).then(cfg => {
+      if (cfg.env === 'dev') document.body.classList.add('dev-mode');
+    }).catch(() => {});
   </script>
 </body>
 </html>

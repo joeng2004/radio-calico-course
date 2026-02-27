@@ -3,7 +3,7 @@ const Database = require('better-sqlite3');
 const crypto = require('crypto');
 
 const app = express();
-const db = new Database('dev.db');
+const db = new Database(process.env.DB_PATH || 'dev.db');
 
 app.set('trust proxy', true);
 app.use(express.json());
@@ -28,6 +28,10 @@ function getUserId(req) {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/api/config', (req, res) => {
+  res.json({ env: process.env.APP_ENV || 'prod' });
 });
 
 app.get('/api/ratings', (req, res) => {

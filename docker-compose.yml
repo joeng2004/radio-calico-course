@@ -1,0 +1,30 @@
+volumes:
+  db-data:
+
+services:
+  app-dev:
+    build:
+      context: .
+      target: dev
+    profiles: [dev]
+    ports:
+      - "3002:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - db-data:/data
+    environment:
+      - DB_PATH=/data/dev.db
+      - APP_ENV=dev
+
+  app-prod:
+    build:
+      context: .
+      target: prod
+    profiles: [prod]
+    ports:
+      - "3000:3000"
+    volumes:
+      - db-data:/data
+    environment:
+      - DB_PATH=/data/dev.db

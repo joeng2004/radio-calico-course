@@ -9,6 +9,9 @@ body {
   font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #231F20;
 }
+body.dev-mode {
+  background: #FFE5C4;
+}
 
 /* ── Header ── */
 .header {
